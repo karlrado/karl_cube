@@ -111,7 +111,7 @@ const std::vector<Vertex> vertices = {
 
 const std::vector<uint16_t> indices = {
     0, 1, 2, 0, 2, 3, 0, 3, 4,  // top
-    5, 6, 7, 5, 7, 8,           // bottom
+    5, 7, 6, 5, 8, 7,           // bottom
     6, 7, 9, 6, 9, 2, 6, 2, 1,  // left front
     8, 9, 7, 8, 3, 9, 8, 4, 3,  // right front
     9, 3, 2,                    // front
