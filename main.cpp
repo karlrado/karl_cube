@@ -97,21 +97,21 @@ struct UniformBufferObject {
 };
 
 const std::vector<Vertex> vertices = {
-    {{-0.5f, -0.5f, +0.5f}, {1.0f, 0.0f, 0.0f}},  // 0
-    {{+0.5f, -0.5f, +0.5f}, {0.0f, 1.0f, 0.0f}},  // 1
+    {{-0.5f, -0.5f, +0.5f}, {1.0f, 1.0f, 1.0f}},  // 0
+    {{+0.5f, -0.5f, +0.5f}, {1.0f, 1.0f, 1.0f}},  // 1
     {{+0.5f, +0.0f, +0.5f}, {1.0f, 1.0f, 1.0f}},  // 2
     {{+0.0f, +0.5f, +0.5f}, {1.0f, 1.0f, 1.0f}},  // 3
-    {{-0.5f, +0.5f, +0.5f}, {1.0f, 0.0f, 1.0f}},  // 4
-    {{-0.5f, -0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}},  // 5
-    {{+0.5f, -0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}},  // 6
-    {{+0.5f, +0.5f, -0.5f}, {0.0f, 0.0f, 1.0f}},  // 7
-    {{-0.5f, +0.5f, -0.5f}, {0.0f, 1.0f, 1.0f}},  // 8
+    {{-0.5f, +0.5f, +0.5f}, {1.0f, 1.0f, 1.0f}},  // 4
+    {{-0.5f, -0.5f, -0.5f}, {1.0f, 1.0f, 1.0f}},  // 5
+    {{+0.5f, -0.5f, -0.5f}, {1.0f, 1.0f, 1.0f}},  // 6
+    {{+0.5f, +0.5f, -0.5f}, {1.0f, 1.0f, 1.0f}},  // 7
+    {{-0.5f, +0.5f, -0.5f}, {1.0f, 1.0f, 1.0f}},  // 8
     {{+0.5f, +0.5f, +0.0f}, {1.0f, 1.0f, 1.0f}},  // 9
 };
 
 const std::vector<uint16_t> indices = {
     0, 1, 2, 0, 2, 3, 0, 3, 4,  // top
-    5, 6, 7, 5, 7, 8,           // bottom
+    5, 7, 6, 5, 8, 7,           // bottom
     6, 7, 9, 6, 9, 2, 6, 2, 1,  // left front
     8, 9, 7, 8, 3, 9, 8, 4, 3,  // right front
     9, 3, 2,                    // front
@@ -385,6 +385,8 @@ class HelloTriangleApplication {
         }
 
         VkPhysicalDeviceFeatures deviceFeatures = {};
+        deviceFeatures.fillModeNonSolid = true;
+        deviceFeatures.wideLines = true;
 
         VkDeviceCreateInfo createInfo = {};
         createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
@@ -624,8 +626,8 @@ class HelloTriangleApplication {
         rasterizer.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
         rasterizer.depthClampEnable = VK_FALSE;
         rasterizer.rasterizerDiscardEnable = VK_FALSE;
-        rasterizer.polygonMode = VK_POLYGON_MODE_FILL;
-        rasterizer.lineWidth = 1.0f;
+        rasterizer.polygonMode = VK_POLYGON_MODE_LINE;
+        rasterizer.lineWidth = 5.0f;
         rasterizer.cullMode = VK_CULL_MODE_BACK_BIT;
         rasterizer.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
         rasterizer.depthBiasEnable = VK_FALSE;
