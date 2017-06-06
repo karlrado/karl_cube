@@ -152,6 +152,7 @@ class HelloTriangleApplication {
     VkDescriptorSetLayout descriptorSetLayout;
     VkPipelineLayout pipelineLayout;
     VkPipeline graphicsPipeline;
+    VkPipeline graphicsPipeline2;
 
     VkCommandPool commandPool;
 
@@ -232,6 +233,7 @@ class HelloTriangleApplication {
         vkFreeCommandBuffers(device, commandPool, static_cast<uint32_t>(commandBuffers.size()), commandBuffers.data());
 
         vkDestroyPipeline(device, graphicsPipeline, nullptr);
+        vkDestroyPipeline(device, graphicsPipeline2, nullptr);
         vkDestroyPipelineLayout(device, pipelineLayout, nullptr);
         vkDestroyRenderPass(device, renderPass, nullptr);
 
@@ -692,6 +694,12 @@ class HelloTriangleApplication {
             throw std::runtime_error("failed to create graphics pipeline!");
         }
 
+        rasterizer.polygonMode = VK_POLYGON_MODE_LINE;
+        rasterizer.lineWidth = 5.0f;
+        if (vkCreateGraphicsPipelines(device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &graphicsPipeline2) != VK_SUCCESS) {
+            throw std::runtime_error("failed to create graphics pipeline!");
+        }
+
         vkDestroyShaderModule(device, fragShaderModule, nullptr);
         vkDestroyShaderModule(device, vertShaderModule, nullptr);
     }
@@ -897,7 +905,8 @@ class HelloTriangleApplication {
     }
 
     void createVertexBuffer() {
-        VkDeviceSize bufferSize = sizeof(vertices[0]) * vertices.size();
+        // double the size for the solid faces and the border.
+        VkDeviceSize bufferSize = sizeof(vertices[0]) * vertices.size() * 2;
 
         VkBuffer stagingBuffer;
         VkDeviceMemory stagingBufferMemory;
@@ -908,6 +917,16 @@ class HelloTriangleApplication {
         void* data;
         vkMapMemory(device, stagingBufferMemory, 0, bufferSize, 0, &data);
         memcpy(data, vertices.data(), (size_t)bufferSize);
+        Vertex *v = (Vertex*) data;
+        for (unsigned int i = 0; i < vertices.size(); i++) {
+            v[i].color.r = 0.0f;
+            v[i].color.g = 0.0f;
+            v[i].color.b = 0.0f;
+            v[vertices.size() + i].pos = v[i].pos * 1.0f + 0.0f;
+            v[vertices.size() + i].color.r = 1.0f;
+            v[vertices.size() + i].color.g = 1.0f;
+            v[vertices.size() + i].color.b = 1.0f;
+        }
         vkUnmapMemory(device, stagingBufferMemory);
 
         createBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
@@ -1105,7 +1124,7 @@ class HelloTriangleApplication {
 
             vkCmdBindPipeline(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipeline);
 
-            VkBuffer vertexBuffers[] = {vertexBuffer};
+            VkBuffer vertexBuffers[] = {vertexBuffer };
             VkDeviceSize offsets[] = {0};
             vkCmdBindVertexBuffers(commandBuffers[i], 0, 1, vertexBuffers, offsets);
 
@@ -1115,6 +1134,10 @@ class HelloTriangleApplication {
                                     nullptr);
 
             vkCmdDrawIndexed(commandBuffers[i], static_cast<uint32_t>(indices.size()), 1, 0, 0, 0);
+
+            vkCmdBindPipeline(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipeline2);
+            vkCmdSetDepthBias(commandBuffers[i], 1.25f, 0.0f, 1.75f);
+            vkCmdDrawIndexed(commandBuffers[i], static_cast<uint32_t>(indices.size()), 1, 0, vertices.size(), 0);
 
             vkCmdEndRenderPass(commandBuffers[i]);
 
