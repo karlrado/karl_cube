@@ -2,7 +2,7 @@
 #include <GLFW/glfw3.h>
 
 // This include isn't really needed because the GLFW header pulls it in.
-// Bit it helps Qt Creator with the syntax highlighting
+// But it helps Qt Creator with the syntax highlighting.
 
 #include <vulkan/vulkan.h>
 
