@@ -1,6 +1,8 @@
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
 
+#include <vulkan/vulkan.h>
+
 #define GLM_FORCE_RADIANS
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
 #include <glm/glm.hpp>
@@ -386,6 +388,14 @@ class HelloTriangleApplication {
 
         VkPhysicalDeviceFeatures deviceFeatures = {};
 
+        vkGetPhysicalDeviceFeatures(physicalDevice, &deviceFeatures);
+        if (!deviceFeatures.geometryShader) {
+            throw std::runtime_error("Geometry Shader not supported!");
+        }
+
+        deviceFeatures = {};
+        deviceFeatures.geometryShader = VK_TRUE;
+
         VkDeviceCreateInfo createInfo = {};
         createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
 
@@ -566,9 +576,11 @@ class HelloTriangleApplication {
 
     void createGraphicsPipeline() {
         auto vertShaderCode = readFile("shaders/vert.spv");
+        auto geomShaderCode = readFile("shaders/geom.spv");
         auto fragShaderCode = readFile("shaders/frag.spv");
 
         VkShaderModule vertShaderModule = createShaderModule(vertShaderCode);
+        VkShaderModule geomShaderModule = createShaderModule(geomShaderCode);
         VkShaderModule fragShaderModule = createShaderModule(fragShaderCode);
 
         VkPipelineShaderStageCreateInfo vertShaderStageInfo = {};
@@ -577,13 +589,19 @@ class HelloTriangleApplication {
         vertShaderStageInfo.module = vertShaderModule;
         vertShaderStageInfo.pName = "main";
 
+        VkPipelineShaderStageCreateInfo geomShaderStageInfo = {};
+        geomShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+        geomShaderStageInfo.stage = VK_SHADER_STAGE_GEOMETRY_BIT;
+        geomShaderStageInfo.module = geomShaderModule;
+        geomShaderStageInfo.pName = "main";
+
         VkPipelineShaderStageCreateInfo fragShaderStageInfo = {};
         fragShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
         fragShaderStageInfo.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
         fragShaderStageInfo.module = fragShaderModule;
         fragShaderStageInfo.pName = "main";
 
-        VkPipelineShaderStageCreateInfo shaderStages[] = {vertShaderStageInfo, fragShaderStageInfo};
+        VkPipelineShaderStageCreateInfo shaderStages[] = {vertShaderStageInfo, geomShaderStageInfo, fragShaderStageInfo};
 
         VkPipelineVertexInputStateCreateInfo vertexInputInfo = {};
         vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
@@ -674,7 +692,7 @@ class HelloTriangleApplication {
 
         VkGraphicsPipelineCreateInfo pipelineInfo = {};
         pipelineInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
-        pipelineInfo.stageCount = 2;
+        pipelineInfo.stageCount = 3;
         pipelineInfo.pStages = shaderStages;
         pipelineInfo.pVertexInputState = &vertexInputInfo;
         pipelineInfo.pInputAssemblyState = &inputAssembly;
@@ -693,6 +711,7 @@ class HelloTriangleApplication {
         }
 
         vkDestroyShaderModule(device, fragShaderModule, nullptr);
+        vkDestroyShaderModule(device, geomShaderModule, nullptr);
         vkDestroyShaderModule(device, vertShaderModule, nullptr);
     }
 
