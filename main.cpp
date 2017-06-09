@@ -93,6 +93,7 @@ struct UniformBufferObject {
     glm::mat4 model;
     glm::mat4 view;
     glm::mat4 proj;
+    glm::vec3 eye;
 };
 
 const std::vector<Vertex> vertices = {
@@ -1164,9 +1165,9 @@ class HelloTriangleApplication {
         float time = std::chrono::duration_cast<std::chrono::milliseconds>(currentTime - startTime).count() / 1000.0f;
 
         UniformBufferObject ubo = {};
-        glm::vec3 eye = glm::vec3(2.0f, 2.0f, 2.0f);
+        ubo.eye = glm::vec3(2.0f, 2.0f, 2.0f);
         ubo.model = glm::rotate(glm::mat4(), time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-        ubo.view = glm::lookAt(eye, glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+        ubo.view = glm::lookAt(ubo.eye, glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
         ubo.proj = glm::perspective(glm::radians(45.0f), swapChainExtent.width / (float)swapChainExtent.height, 0.1f, 10.0f);
         ubo.proj[1][1] *= -1;
 
@@ -1184,6 +1185,10 @@ class HelloTriangleApplication {
         ubo.normal = glm::inverse(ubo.normal);
         ubo.normal = glm::transpose(ubo.normal);
 #endif
+        glm::vec4 eye4 = glm::vec4(ubo.eye, 1.0f);
+        eye4 = ubo.proj * eye4;
+        //eye4 = glm::normalize(eye4);
+        eye4 = eye4 / eye4[3];
         void* data;
         vkMapMemory(device, uniformBufferMemory, 0, sizeof(ubo), 0, &data);
         memcpy(data, &ubo, sizeof(ubo));
