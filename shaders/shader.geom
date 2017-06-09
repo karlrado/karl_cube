@@ -4,7 +4,7 @@
 #extension GL_ARB_shading_language_420pack : enable
 
 layout(binding = 0) uniform UniformBufferObject {
-    mat4 model;
+    mat4 mvp;
     mat4 view;
     mat4 proj;
     vec3 eye;
@@ -26,9 +26,9 @@ void main() {
   vec3 ac = gl_in[0].gl_Position.xyz - gl_in[2].gl_Position.xyz;
   vec3 face_normal = cross(ab, ac);  // no need to normalize
 
-  // Apply view transform to bring eye location into the same
+  // Apply transform to bring eye location into the same
   // space as the points.
-  vec4 eye = ubo.view * vec4(ubo.eye, 1.0f);
+  vec4 eye = ubo.proj* ubo.view * vec4(ubo.eye, 1.0f);
 
   // Calculate the view direction vector
   vec3 vt = eye.xyz - gl_in[1].gl_Position.xyz;  // no need to normalize
@@ -37,10 +37,10 @@ void main() {
   float d = dot(vt, face_normal);
 
   if (d > 0) {
-    gl_Position = ubo.proj * gl_in[1].gl_Position;
+    gl_Position = gl_in[1].gl_Position;
     outColor = inColor[1];
     EmitVertex();
-    gl_Position = ubo.proj * gl_in[2].gl_Position;
+    gl_Position = gl_in[2].gl_Position;
     outColor = inColor[2];
     EmitVertex();
     EndPrimitive();
