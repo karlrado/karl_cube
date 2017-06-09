@@ -67,7 +67,6 @@ struct SwapChainSupportDetails {
 
 struct Vertex {
     glm::vec3 pos;
-    glm::vec3 color;
 
     static VkVertexInputBindingDescription getBindingDescription() {
         VkVertexInputBindingDescription bindingDescription = {};
@@ -78,18 +77,13 @@ struct Vertex {
         return bindingDescription;
     }
 
-    static std::array<VkVertexInputAttributeDescription, 2> getAttributeDescriptions() {
-        std::array<VkVertexInputAttributeDescription, 2> attributeDescriptions = {};
+    static std::array<VkVertexInputAttributeDescription, 1> getAttributeDescriptions() {
+        std::array<VkVertexInputAttributeDescription, 1> attributeDescriptions = {};
 
         attributeDescriptions[0].binding = 0;
         attributeDescriptions[0].location = 0;
         attributeDescriptions[0].format = VK_FORMAT_R32G32B32_SFLOAT;
         attributeDescriptions[0].offset = offsetof(Vertex, pos);
-
-        attributeDescriptions[1].binding = 0;
-        attributeDescriptions[1].location = 1;
-        attributeDescriptions[1].format = VK_FORMAT_R32G32B32_SFLOAT;
-        attributeDescriptions[1].offset = offsetof(Vertex, color);
 
         return attributeDescriptions;
     }
@@ -102,26 +96,30 @@ struct UniformBufferObject {
 };
 
 const std::vector<Vertex> vertices = {
-    {{-0.5f, -0.5f, +0.5f}, {1.0f, 0.0f, 0.0f}},  // 0
-    {{+0.5f, -0.5f, +0.5f}, {0.0f, 1.0f, 0.0f}},  // 1
-    {{+0.5f, +0.0f, +0.5f}, {1.0f, 1.0f, 1.0f}},  // 2
-    {{+0.0f, +0.5f, +0.5f}, {1.0f, 1.0f, 1.0f}},  // 3
-    {{-0.5f, +0.5f, +0.5f}, {1.0f, 0.0f, 1.0f}},  // 4
-    {{-0.5f, -0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}},  // 5
-    {{+0.5f, -0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}},  // 6
-    {{+0.5f, +0.5f, -0.5f}, {0.0f, 0.0f, 1.0f}},  // 7
-    {{-0.5f, +0.5f, -0.5f}, {0.0f, 1.0f, 1.0f}},  // 8
-    {{+0.5f, +0.5f, +0.0f}, {1.0f, 1.0f, 1.0f}},  // 9
+    {{-0.5f, -0.5f, +0.5f}},  // 0
+    {{+0.5f, -0.5f, +0.5f}},  // 1
+    {{+0.5f, +0.0f, +0.5f}},  // 2
+    {{+0.0f, +0.5f, +0.5f}},  // 3
+    {{-0.5f, +0.5f, +0.5f}},  // 4
+    {{-0.5f, -0.5f, -0.5f}},  // 5
+    {{+0.5f, -0.5f, -0.5f}},  // 6
+    {{+0.5f, +0.5f, -0.5f}},  // 7
+    {{-0.5f, +0.5f, -0.5f}},  // 8
+    {{+0.5f, +0.5f, +0.0f}},  // 9
 };
 
 const std::vector<uint16_t> indices = {
-    0, 1, 2, 0, 2, 3, 0, 3, 4,  // top
-    5, 7, 6, 5, 8, 7,           // bottom
-    6, 7, 9, 6, 9, 2, 6, 2, 1,  // left front
-    8, 9, 7, 8, 3, 9, 8, 4, 3,  // right front
-    9, 3, 2,                    // front
-    6, 1, 5, 1, 0, 5,           // left rear
-    8, 5, 0, 0, 4, 8,           // right rear
+    4, 0, 1, 2, 3, 4, 0, 1,     // top
+    7, 6, 5, 8, 7, 6, 5,        // bottom
+    2, 1, 6, 7, 9, 2, 1, 6,     // left front
+    3, 9, 7, 8, 4, 3, 9, 7,     // right front
+    2, 9, 3, 2, 9, 3,           // front
+    1, 0, 5, 6, 1, 0, 5,        // left rear
+    5, 0, 4, 8, 5, 0, 4,        // right rear
+};
+
+const std::vector<uint16_t> faces = {
+    0, 8, 15, 23, 31, 37, 44, 51
 };
 
 class HelloTriangleApplication {
@@ -565,7 +563,7 @@ class HelloTriangleApplication {
         uboLayoutBinding.descriptorCount = 1;
         uboLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
         uboLayoutBinding.pImmutableSamplers = nullptr;
-        uboLayoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+        uboLayoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_GEOMETRY_BIT;
 
         VkDescriptorSetLayoutCreateInfo layoutInfo = {};
         layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
@@ -619,7 +617,7 @@ class HelloTriangleApplication {
 
         VkPipelineInputAssemblyStateCreateInfo inputAssembly = {};
         inputAssembly.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
-        inputAssembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+        inputAssembly.topology = VK_PRIMITIVE_TOPOLOGY_LINE_STRIP_WITH_ADJACENCY;
         inputAssembly.primitiveRestartEnable = VK_FALSE;
 
         VkViewport viewport = {};
@@ -1136,8 +1134,11 @@ class HelloTriangleApplication {
             vkCmdBindDescriptorSets(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &descriptorSet, 0,
                                     nullptr);
 
-            vkCmdDrawIndexed(commandBuffers[i], static_cast<uint32_t>(indices.size()), 1, 0, 0, 0);
+            for (size_t j = 0; j < faces.size() - 1; j++) {
+                vkCmdDrawIndexed(commandBuffers[i], faces[j+1] - faces[j], 1, faces[j], 0, 0);
+            }
 
+            //vkCmdDrawIndexed(commandBuffers[i], faces[5+1] - faces[5], 1, faces[5], 0, 0);
             vkCmdEndRenderPass(commandBuffers[i]);
 
             if (vkEndCommandBuffer(commandBuffers[i]) != VK_SUCCESS) {
@@ -1163,11 +1164,26 @@ class HelloTriangleApplication {
         float time = std::chrono::duration_cast<std::chrono::milliseconds>(currentTime - startTime).count() / 1000.0f;
 
         UniformBufferObject ubo = {};
+        glm::vec3 eye = glm::vec3(2.0f, 2.0f, 2.0f);
         ubo.model = glm::rotate(glm::mat4(), time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-        ubo.view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+        ubo.view = glm::lookAt(eye, glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
         ubo.proj = glm::perspective(glm::radians(45.0f), swapChainExtent.width / (float)swapChainExtent.height, 0.1f, 10.0f);
         ubo.proj[1][1] *= -1;
 
+#if 0
+        glm::mat4 temp = ubo.model * ubo.view;
+        ubo.normal[0][0] = temp[0][0];
+        ubo.normal[0][1] = temp[0][1];
+        ubo.normal[0][2] = temp[0][2];
+        ubo.normal[1][0] = temp[1][0];
+        ubo.normal[1][1] = temp[1][1];
+        ubo.normal[1][2] = temp[1][2];
+        ubo.normal[2][0] = temp[2][0];
+        ubo.normal[2][1] = temp[2][1];
+        ubo.normal[2][2] = temp[2][2];
+        ubo.normal = glm::inverse(ubo.normal);
+        ubo.normal = glm::transpose(ubo.normal);
+#endif
         void* data;
         vkMapMemory(device, uniformBufferMemory, 0, sizeof(ubo), 0, &data);
         memcpy(data, &ubo, sizeof(ubo));
