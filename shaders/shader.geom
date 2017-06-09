@@ -24,14 +24,14 @@ void main() {
   // which three we pick to make the two vectors.
   vec3 ab = gl_in[0].gl_Position.xyz - gl_in[1].gl_Position.xyz;
   vec3 ac = gl_in[0].gl_Position.xyz - gl_in[2].gl_Position.xyz;
-  vec3 face_normal = normalize(cross(ab, ac));
+  vec3 face_normal = cross(ab, ac);  // no need to normalize
 
   // Apply view transform to bring eye location into the same
   // space as the points.
   vec4 eye = ubo.view * vec4(ubo.eye, 1.0f);
 
   // Calculate the view direction vector
-  vec3 vt = normalize(eye.xyz - gl_in[1].gl_Position.xyz);
+  vec3 vt = eye.xyz - gl_in[1].gl_Position.xyz;  // no need to normalize
 
   // Take the dot product of the normal with the view direction
   float d = dot(vt, face_normal);
