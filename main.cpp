@@ -109,6 +109,33 @@ const std::vector<Vertex> vertices = {
     {{+0.5f, +0.5f, +0.0f}},  // 9
 };
 
+// Geometry Layout
+// We're drawing the cube with line strips, one strip per face.
+// And we're using a geometry shader to compute the normal of
+// each face and do back-face culling.
+// The trouble with a simple line strip is the vertices of
+// the line strip are presented to the GS two vertices at a time,
+// describing a single line strip segment.
+// This isn't sufficient to compute the normal, since we need three.
+// So instead use a line strip with adjacency vertices.
+// Define each line strip by adding two additional vertices at each end.
+// These verts are the ones that would be encountered if going around
+// the closed line loop by one more vertex in each direction.
+// For example:
+// Consider a 4-vertex polygon with verts A B C D.
+// Drawing this with a normal line strip would use:  A B C D A
+// We want to put another vertex in front of the first A, so then:
+// D A B C D A
+// and then add one a the end:
+// D A B C D A B
+// (Using any other vertex as long as neighboring verts are not the
+//  same would probably work.  Also, any other vert in the same plane
+//  that is non-conicient with other points would work too, as long
+//  as the GS picks the right verts to draw.)
+// The geom shader is then presented with 4 verts for each line
+// segement, and it passes along only the middle 2 so that it
+// draws only the "real" line.
+
 const std::vector<uint16_t> indices = {
     4, 0, 1, 2, 3, 4, 0, 1,     // top
     7, 6, 5, 8, 7, 6, 5,        // bottom
@@ -118,6 +145,9 @@ const std::vector<uint16_t> indices = {
     1, 0, 5, 6, 1, 0, 5,        // left rear
     5, 0, 4, 8, 5, 0, 4,        // right rear
 };
+
+// Each element is the starting index of a face.
+// The last one is there just to indicate the length of the last face.
 
 const std::vector<uint16_t> faces = {
     0, 8, 15, 23, 31, 37, 44, 51
@@ -1139,7 +1169,6 @@ class HelloTriangleApplication {
                 vkCmdDrawIndexed(commandBuffers[i], faces[j+1] - faces[j], 1, faces[j], 0, 0);
             }
 
-            //vkCmdDrawIndexed(commandBuffers[i], faces[5+1] - faces[5], 1, faces[5], 0, 0);
             vkCmdEndRenderPass(commandBuffers[i]);
 
             if (vkEndCommandBuffer(commandBuffers[i]) != VK_SUCCESS) {
@@ -1163,7 +1192,6 @@ class HelloTriangleApplication {
 
         auto currentTime = std::chrono::high_resolution_clock::now();
         float time = std::chrono::duration_cast<std::chrono::milliseconds>(currentTime - startTime).count() / 1000.0f;
-
         UniformBufferObject ubo = {};
         ubo.eye = glm::vec3(2.0f, 2.0f, 2.0f);
         ubo.model = glm::rotate(glm::mat4(), time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
@@ -1171,24 +1199,6 @@ class HelloTriangleApplication {
         ubo.proj = glm::perspective(glm::radians(45.0f), swapChainExtent.width / (float)swapChainExtent.height, 0.1f, 10.0f);
         ubo.proj[1][1] *= -1;
 
-#if 0
-        glm::mat4 temp = ubo.model * ubo.view;
-        ubo.normal[0][0] = temp[0][0];
-        ubo.normal[0][1] = temp[0][1];
-        ubo.normal[0][2] = temp[0][2];
-        ubo.normal[1][0] = temp[1][0];
-        ubo.normal[1][1] = temp[1][1];
-        ubo.normal[1][2] = temp[1][2];
-        ubo.normal[2][0] = temp[2][0];
-        ubo.normal[2][1] = temp[2][1];
-        ubo.normal[2][2] = temp[2][2];
-        ubo.normal = glm::inverse(ubo.normal);
-        ubo.normal = glm::transpose(ubo.normal);
-#endif
-        glm::vec4 eye4 = glm::vec4(ubo.eye, 1.0f);
-        eye4 = ubo.proj * eye4;
-        //eye4 = glm::normalize(eye4);
-        eye4 = eye4 / eye4[3];
         void* data;
         vkMapMemory(device, uniformBufferMemory, 0, sizeof(ubo), 0, &data);
         memcpy(data, &ubo, sizeof(ubo));

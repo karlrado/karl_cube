@@ -26,21 +26,21 @@ void main() {
   vec3 ac = gl_in[0].gl_Position.xyz - gl_in[2].gl_Position.xyz;
   vec3 face_normal = normalize(cross(ab, ac));
 
-  // Transform the eye point into the projection space.
-  vec4 eye = ubo.proj * vec4(ubo.eye, 1.0f);
-  eye = eye * (1.0f / eye[3]);
+  // Apply view transform to bring eye location into the same
+  // space as the points.
+  vec4 eye = ubo.view * vec4(ubo.eye, 1.0f);
 
   // Calculate the view direction vector
-  vec3 vt = normalize(eye.xyz) - gl_in[1].gl_Position.xyz;
+  vec3 vt = normalize(eye.xyz - gl_in[1].gl_Position.xyz);
 
   // Take the dot product of the normal with the view direction
   float d = dot(vt, face_normal);
 
   if (d > 0) {
-    gl_Position = gl_in[1].gl_Position;
+    gl_Position = ubo.proj * gl_in[1].gl_Position;
     outColor = inColor[1];
     EmitVertex();
-    gl_Position = gl_in[2].gl_Position;
+    gl_Position = ubo.proj * gl_in[2].gl_Position;
     outColor = inColor[2];
     EmitVertex();
     EndPrimitive();
