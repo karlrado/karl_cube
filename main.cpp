@@ -21,8 +21,10 @@
 #include <array>
 #include <set>
 
-const int WIDTH = 800;
-const int HEIGHT = 600;
+//const int WIDTH = 800;
+//const int HEIGHT = 600;
+const int WIDTH = 256;
+const int HEIGHT = 256;
 
 const std::vector<const char*> validationLayers = {"VK_LAYER_LUNARG_standard_validation"};
 
@@ -1146,7 +1148,7 @@ class HelloTriangleApplication {
             renderPassInfo.renderArea.extent = swapChainExtent;
 
             std::array<VkClearValue, 2> clearValues = {};
-            clearValues[0].color = {0.0f, 0.0f, 0.0f, 1.0f};
+            clearValues[0].color = {1.0f, 1.0f, 1.0f, 1.0f};
             clearValues[1].depthStencil = {1.0f, 0};
 
             renderPassInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
@@ -1191,7 +1193,7 @@ class HelloTriangleApplication {
         static auto startTime = std::chrono::high_resolution_clock::now();
 
         auto currentTime = std::chrono::high_resolution_clock::now();
-        float time = std::chrono::duration_cast<std::chrono::milliseconds>(currentTime - startTime).count() / 1000.0f;
+        float time = std::chrono::duration_cast<std::chrono::milliseconds>(currentTime - startTime).count() / 1000.0f; time = 0.20f;
         UniformBufferObject ubo = {};
         ubo.eye = glm::vec3(2.0f, 2.0f, 2.0f);
         glm::mat4 model = glm::rotate(glm::mat4(), time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));

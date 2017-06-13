@@ -18,5 +18,5 @@ out gl_PerVertex {
 
 void main() {
     gl_Position = ubo.mvp * vec4(inPosition, 1.0);
-    fragColor = vec4(1.0, 1.0, 1.0, 1.0);
+    fragColor = vec4(120.0f/255.0f, 43.0f/255.0f, 144.0f/255.0f, 1.0);
 }
