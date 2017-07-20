@@ -19,7 +19,7 @@ layout (location = 0) out vec4 outColor;
 void main() {
   // Calculate two vectors in the plane of the input face.
   // The input is line adjacency, which means that we get
-  // four verts, with the acutal line segment being in [1] and [2].
+  // four verts, with the actual line segment being in [1] and [2].
   // All four verts are in the same plane, so it does not matter
   // which three we pick to make the two vectors.
   vec3 ab = gl_in[0].gl_Position.xyz - gl_in[1].gl_Position.xyz;
