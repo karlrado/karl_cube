@@ -13,8 +13,8 @@ layout(binding = 0) uniform UniformBufferObject {
 layout(lines_adjacency) in;
 layout(line_strip, max_vertices = 2) out;
 
-in vec4 inColor[];
-layout (location = 0) out vec4 outColor;
+layout(location = 0) in vec4 inColor[];
+layout(location = 0) out vec4 outColor;
 
 void main() {
   // Calculate two vectors in the plane of the input face.
