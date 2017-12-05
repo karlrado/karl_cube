@@ -1,0 +1,4 @@
+{
+    "terminal.integrated.env.linux": {
+        "VULKAN_SDK": "/home/karl/sdk/VulkanSDK/1.0.57.0/x86_64"}
+}
