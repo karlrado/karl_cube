@@ -424,7 +424,6 @@ class HelloTriangleApplication {
         if (!deviceFeatures.geometryShader) {
             throw std::runtime_error("Geometry Shader not supported!");
         }
-        vkGetPhysicalDeviceFeatures(physicalDevice, &deviceFeatures);
         if (!deviceFeatures.wideLines) {
             throw std::runtime_error("Wide Lines not supported!");
         }
@@ -1197,7 +1196,9 @@ class HelloTriangleApplication {
         static auto startTime = std::chrono::high_resolution_clock::now();
 
         auto currentTime = std::chrono::high_resolution_clock::now();
-        float time = std::chrono::duration_cast<std::chrono::milliseconds>(currentTime - startTime).count() / 1000.0f; time = 0.20f;
+        float time = std::chrono::duration_cast<std::chrono::milliseconds>(currentTime - startTime).count() / 1000.0f;
+        // uncomment this to freeze the rotation at a nice-looking spot.
+        //time = 0.20f;
         UniformBufferObject ubo = {};
         ubo.eye = glm::vec3(2.0f, 2.0f, 2.0f);
         glm::mat4 model = glm::rotate(glm::mat4(), time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
