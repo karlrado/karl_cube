@@ -6,7 +6,7 @@ set(SHADER_SOURCES)
 macro(build_shader src dst)
     add_custom_command(OUTPUT ${CMAKE_BINARY_DIR}/shaders/${dst}
         COMMAND ${GLSLANG_VALIDATOR} -s -V -o ${CMAKE_BINARY_DIR}/shaders/${dst} ${PROJECT_SOURCE_DIR}/shaders/${src}
-        DEPENDS ${PROJECT_SOURCE_DIR}/shaders/${src} ${GLSLANG_VALIDATOR}
+        DEPENDS ${PROJECT_SOURCE_DIR}/shaders/${src}
         )
     set(DEPS ${DEPS} ${CMAKE_BINARY_DIR}/shaders/${dst})
     set(SHADER_SOURCES ${SHADER_SOURCES} ${src})
