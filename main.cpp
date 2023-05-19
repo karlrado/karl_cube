@@ -103,26 +103,26 @@ struct UniformBufferObject {
 };
 
 const std::vector<Vertex> vertices = {
-    {{-0.5f, -0.5f, +0.5f}, {1.0f, 1.0f, 0.0f}},  // 0
-    {{+0.5f, -0.5f, +0.5f}, {0.0f, 1.0f, 0.0f}},  // 1
-    {{+0.5f, +0.0f, +0.5f}, {0.0f, 0.0f, 0.0f}},  // 2
-    {{+0.0f, +0.5f, +0.5f}, {0.0f, 0.0f, 0.0f}},  // 3
-    {{-0.5f, +0.5f, +0.5f}, {1.0f, 0.0f, 1.0f}},  // 4
-    {{-0.5f, -0.5f, -0.5f}, {1.0f, 1.0f, 0.0f}},  // 5
-    {{+0.5f, -0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}},  // 6
-    {{+0.5f, +0.5f, -0.5f}, {0.0f, 0.0f, 1.0f}},  // 7
-    {{-0.5f, +0.5f, -0.5f}, {0.0f, 1.0f, 1.0f}},  // 8
-    {{+0.5f, +0.5f, +0.0f}, {0.0f, 0.0f, 0.0f}},  // 9
+    {{-0.5f, -0.5f, +0.5f}, {0.0f, 1.0f, 0.0f}},  // 0 - left   bottom front
+    {{+0.5f, -0.5f, +0.5f}, {0.0f, 1.0f, 0.0f}},  // 1 - right  bottom front
+    {{+0.5f, +0.0f, +0.5f}, {0.0f, 1.0f, 0.0f}},  // 2 - right  center front
+    {{+0.0f, +0.5f, +0.5f}, {0.0f, 1.0f, 0.0f}},  // 3 - center top    front
+    {{-0.5f, +0.5f, +0.5f}, {0.0f, 1.0f, 0.0f}},  // 4 - left   top    front
+    {{-0.5f, -0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}},  // 5 - left   bottom rear
+    {{+0.5f, -0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}},  // 6 - right  bottom rear
+    {{+0.5f, +0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}},  // 7 - right  top    rear
+    {{-0.5f, +0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}},  // 8 - left   top    rear
+    {{+0.5f, +0.5f, +0.0f}, {0.0f, 1.0f, 0.0f}},  // 9 - right  top    center
 };
 
 const std::vector<uint16_t> indices = {
-    6,  1,  5,  1,  0,  5,            // bottom
-    0,  1,  2,  0,  2,  3,  0, 3, 4,  // left front
-    8,  5,  0,  0,  4,  8,            // left rear
-    5,  7,  6,  5,  8,  7,            // right rear
-    6,  7,  9,  6,  9,  2,  6, 2, 1,  // right front
-    9,  3,  2,                        // front
-    8,  9,  7,  8,  3,  9,  8, 4, 3,  // top
+    6, 1, 1, 0, 0, 5, 5, 6,        // bottom
+    1, 2, 2, 3, 3, 4, 4, 0, 0, 1,  // left front
+    8, 5, 5, 0, 0, 4, 4, 8,        // left rear
+    5, 6, 6, 7, 7, 8, 8, 5,        // right rear
+    6, 7, 7, 9, 9, 2, 2, 1, 1, 6,  // right front
+    9, 3, 3, 2, 2, 9,              // front
+    9, 3, 3, 4, 4, 8, 8, 7, 7, 9,  // top
 };
 
 class HelloTriangleApplication {
@@ -934,7 +934,7 @@ class HelloTriangleApplication {
 
         VkPipelineInputAssemblyStateCreateInfo inputAssembly{};
         inputAssembly.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
-        inputAssembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+        inputAssembly.topology = VK_PRIMITIVE_TOPOLOGY_LINE_LIST;
         inputAssembly.primitiveRestartEnable = VK_FALSE;
 
         VkPipelineViewportStateCreateInfo viewportState{};
@@ -1118,7 +1118,6 @@ class HelloTriangleApplication {
 
         vkCmdBindIndexBuffer(commandBuffer, indexBuffer, 0, VK_INDEX_TYPE_UINT16);
 
-        // vkCmdDraw(commandBuffer, 3, 1, 0, 0);
         vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(indices.size()), 1, 0, 0, 0);
 
         vkCmdEndRenderPass(commandBuffer);
