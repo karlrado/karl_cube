@@ -1,0 +1,52 @@
+#version 450
+
+layout(binding = 0) uniform UniformBufferObject {
+    mat4 mvp;
+    mat4 view;
+    mat4 proj;
+    vec3 eye;
+} ubo;
+
+layout(lines_adjacency) in;
+layout(line_strip, max_vertices = 2) out;
+
+layout(location = 0) in vec4 inColor[];
+layout(location = 0) out vec4 outColor;
+
+in gl_PerVertex {
+    vec4 gl_Position;
+    float gl_PointSize;
+    float gl_ClipDistance[];
+    float gl_CullDistance[];
+} gl_in[];
+
+void main() {
+  // Calculate two vectors in the plane of the input face.
+  // The input is line adjacency, which means that we get
+  // four verts, with the actual line segment being in [1] and [2].
+  // All four verts are in the same plane, so it does not matter
+  // which three we pick to make the two vectors.
+  vec3 ab = gl_in[0].gl_Position.xyz - gl_in[1].gl_Position.xyz;
+  vec3 ac = gl_in[0].gl_Position.xyz - gl_in[2].gl_Position.xyz;
+  vec3 face_normal = cross(ab, ac);  // no need to normalize
+
+  // Apply transform to bring eye location into the same
+  // space as the points.
+  vec4 eye = ubo.proj* ubo.view * vec4(ubo.eye, 1.0f);
+
+  // Calculate the view direction vector
+  vec3 vt = eye.xyz - gl_in[1].gl_Position.xyz;  // no need to normalize
+
+  // Take the dot product of the normal with the view direction
+  float d = dot(vt, face_normal);
+
+  if (d > 0) {
+    gl_Position = gl_in[1].gl_Position;
+    outColor = inColor[1];
+    EmitVertex();
+    gl_Position = gl_in[2].gl_Position;
+    outColor = inColor[2];
+    EmitVertex();
+    EndPrimitive();
+  }
+}

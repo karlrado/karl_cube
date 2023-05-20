@@ -68,7 +68,6 @@ struct SwapChainSupportDetails {
 
 struct Vertex {
     glm::vec3 pos;
-    glm::vec3 color;
 
     static VkVertexInputBindingDescription getBindingDescription() {
         VkVertexInputBindingDescription bindingDescription = {};
@@ -79,51 +78,79 @@ struct Vertex {
         return bindingDescription;
     }
 
-    static std::array<VkVertexInputAttributeDescription, 2> getAttributeDescriptions() {
-        std::array<VkVertexInputAttributeDescription, 2> attributeDescriptions = {};
+    static std::array<VkVertexInputAttributeDescription, 1> getAttributeDescriptions() {
+        std::array<VkVertexInputAttributeDescription, 1> attributeDescriptions = {};
 
         attributeDescriptions[0].binding = 0;
         attributeDescriptions[0].location = 0;
         attributeDescriptions[0].format = VK_FORMAT_R32G32B32_SFLOAT;
         attributeDescriptions[0].offset = offsetof(Vertex, pos);
 
-        attributeDescriptions[1].binding = 0;
-        attributeDescriptions[1].location = 1;
-        attributeDescriptions[1].format = VK_FORMAT_R32G32B32_SFLOAT;
-        attributeDescriptions[1].offset = offsetof(Vertex, color);
-
         return attributeDescriptions;
     }
 };
 
 struct UniformBufferObject {
-    glm::mat4 model;
+    glm::mat4 mvp;
     glm::mat4 view;
     glm::mat4 proj;
+    glm::vec3 eye;
 };
 
 const std::vector<Vertex> vertices = {
-    {{-0.5f, -0.5f, +0.5f}, {0.0f, 1.0f, 0.0f}},  // 0 - left   bottom front
-    {{+0.5f, -0.5f, +0.5f}, {0.0f, 1.0f, 0.0f}},  // 1 - right  bottom front
-    {{+0.5f, +0.0f, +0.5f}, {0.0f, 1.0f, 0.0f}},  // 2 - right  center front
-    {{+0.0f, +0.5f, +0.5f}, {0.0f, 1.0f, 0.0f}},  // 3 - center top    front
-    {{-0.5f, +0.5f, +0.5f}, {0.0f, 1.0f, 0.0f}},  // 4 - left   top    front
-    {{-0.5f, -0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}},  // 5 - left   bottom rear
-    {{+0.5f, -0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}},  // 6 - right  bottom rear
-    {{+0.5f, +0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}},  // 7 - right  top    rear
-    {{-0.5f, +0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}},  // 8 - left   top    rear
-    {{+0.5f, +0.5f, +0.0f}, {0.0f, 1.0f, 0.0f}},  // 9 - right  top    center
+    {{-0.5f, -0.5f, +0.5f}},  // 0 - left   bottom front
+    {{+0.5f, -0.5f, +0.5f}},  // 1 - right  bottom front
+    {{+0.5f, +0.0f, +0.5f}},  // 2 - right  center front
+    {{+0.0f, +0.5f, +0.5f}},  // 3 - center top    front
+    {{-0.5f, +0.5f, +0.5f}},  // 4 - left   top    front
+    {{-0.5f, -0.5f, -0.5f}},  // 5 - left   bottom rear
+    {{+0.5f, -0.5f, -0.5f}},  // 6 - right  bottom rear
+    {{+0.5f, +0.5f, -0.5f}},  // 7 - right  top    rear
+    {{-0.5f, +0.5f, -0.5f}},  // 8 - left   top    rear
+    {{+0.5f, +0.5f, +0.0f}},  // 9 - right  top    center
 };
 
+// Geometry Layout
+// We're drawing the cube with line strips, one strip per face.
+// And we're using a geometry shader to compute the normal of
+// each face and do back-face culling.
+// The trouble with a simple line strip is the vertices of
+// the line strip are presented to the GS two vertices at a time,
+// describing a single line strip segment.
+// This isn't sufficient to compute the normal, since we need three.
+// So instead use a line strip with adjacency vertices.
+// Define each line strip by adding two additional vertices at each end.
+// These verts are the ones that would be encountered if going around
+// the closed line loop by one more vertex in each direction.
+// For example:
+// Consider a 4-vertex polygon with verts A B C D.
+// Drawing this with a normal line strip would use:  A B C D A
+// We want to put another vertex in front of the first A, so then:
+// D A B C D A
+// and then add one a the end:
+// D A B C D A B
+// (Using any other vertex as long as neighboring verts are not the
+//  same would probably work.  Also, any other vert in the same plane
+//  that is non-conicient with other points would work too, as long
+//  as the GS picks the right verts to draw.)
+// The geom shader is then presented with 4 verts for each line
+// segement, and it passes along only the middle 2 so that it
+// draws only the "real" line.
+
 const std::vector<uint16_t> indices = {
-    6, 1, 1, 0, 0, 5, 5, 6,        // bottom
-    1, 2, 2, 3, 3, 4, 4, 0, 0, 1,  // left front
-    8, 5, 5, 0, 0, 4, 4, 8,        // left rear
-    5, 6, 6, 7, 7, 8, 8, 5,        // right rear
-    6, 7, 7, 9, 9, 2, 2, 1, 1, 6,  // right front
-    9, 3, 3, 2, 2, 9,              // front
-    9, 3, 3, 4, 4, 8, 8, 7, 7, 9,  // top
+    1, 0, 5, 6, 1, 0, 5,     // bottom
+    4, 0, 1, 2, 3, 4, 0, 1,  // left front
+    5, 0, 4, 8, 5, 0, 4,     // left rear
+    7, 6, 5, 8, 7, 6, 5,     // right rear
+    2, 1, 6, 7, 9, 2, 1, 6,  // right front
+    2, 9, 3, 2, 9, 3,        // front
+    3, 9, 7, 8, 4, 3, 9, 7,  // top
 };
+
+// Each element is the starting index of a face.
+// The last one is there just to indicate the length of the last face.
+
+const std::vector<uint16_t> faces = {0, 7, 15, 22, 29, 37, 43, 51};
 
 class HelloTriangleApplication {
   public:
@@ -379,6 +406,18 @@ class HelloTriangleApplication {
         }
 
         VkPhysicalDeviceFeatures deviceFeatures{};
+
+        vkGetPhysicalDeviceFeatures(physicalDevice, &deviceFeatures);
+        if (!deviceFeatures.geometryShader) {
+            throw std::runtime_error("Geometry Shader not supported!");
+        }
+        if (!deviceFeatures.wideLines) {
+            throw std::runtime_error("Wide Lines not supported!");
+        }
+
+        deviceFeatures = {};
+        deviceFeatures.geometryShader = VK_TRUE;
+        deviceFeatures.wideLines = VK_TRUE;
 
         VkDeviceCreateInfo createInfo{};
         createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
@@ -890,7 +929,7 @@ class HelloTriangleApplication {
         uboLayoutBinding.descriptorCount = 1;
         uboLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
         uboLayoutBinding.pImmutableSamplers = nullptr;
-        uboLayoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+        uboLayoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_GEOMETRY_BIT;
 
         VkDescriptorSetLayoutCreateInfo layoutInfo = {};
         layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
@@ -904,9 +943,11 @@ class HelloTriangleApplication {
 
     void createGraphicsPipeline() {
         auto vertShaderCode = readFile("shaders/vert.spv");
+        auto geomShaderCode = readFile("shaders/geom.spv");
         auto fragShaderCode = readFile("shaders/frag.spv");
 
         VkShaderModule vertShaderModule = createShaderModule(vertShaderCode);
+        VkShaderModule geomShaderModule = createShaderModule(geomShaderCode);
         VkShaderModule fragShaderModule = createShaderModule(fragShaderCode);
 
         VkPipelineShaderStageCreateInfo vertShaderStageInfo{};
@@ -915,13 +956,19 @@ class HelloTriangleApplication {
         vertShaderStageInfo.module = vertShaderModule;
         vertShaderStageInfo.pName = "main";
 
+        VkPipelineShaderStageCreateInfo geomShaderStageInfo = {};
+        geomShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+        geomShaderStageInfo.stage = VK_SHADER_STAGE_GEOMETRY_BIT;
+        geomShaderStageInfo.module = geomShaderModule;
+        geomShaderStageInfo.pName = "main";
+
         VkPipelineShaderStageCreateInfo fragShaderStageInfo{};
         fragShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
         fragShaderStageInfo.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
         fragShaderStageInfo.module = fragShaderModule;
         fragShaderStageInfo.pName = "main";
 
-        VkPipelineShaderStageCreateInfo shaderStages[] = {vertShaderStageInfo, fragShaderStageInfo};
+        VkPipelineShaderStageCreateInfo shaderStages[] = {vertShaderStageInfo, geomShaderStageInfo, fragShaderStageInfo};
 
         VkPipelineVertexInputStateCreateInfo vertexInputInfo{};
         vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
@@ -934,7 +981,7 @@ class HelloTriangleApplication {
 
         VkPipelineInputAssemblyStateCreateInfo inputAssembly{};
         inputAssembly.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
-        inputAssembly.topology = VK_PRIMITIVE_TOPOLOGY_LINE_LIST;
+        inputAssembly.topology = VK_PRIMITIVE_TOPOLOGY_LINE_STRIP_WITH_ADJACENCY;
         inputAssembly.primitiveRestartEnable = VK_FALSE;
 
         VkPipelineViewportStateCreateInfo viewportState{};
@@ -1003,7 +1050,7 @@ class HelloTriangleApplication {
 
         VkGraphicsPipelineCreateInfo pipelineInfo{};
         pipelineInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
-        pipelineInfo.stageCount = 2;
+        pipelineInfo.stageCount = 3;
         pipelineInfo.pStages = shaderStages;
         pipelineInfo.pVertexInputState = &vertexInputInfo;
         pipelineInfo.pInputAssemblyState = &inputAssembly;
@@ -1023,6 +1070,7 @@ class HelloTriangleApplication {
         }
 
         vkDestroyShaderModule(device, fragShaderModule, nullptr);
+        vkDestroyShaderModule(device, geomShaderModule, nullptr);
         vkDestroyShaderModule(device, vertShaderModule, nullptr);
     }
 
@@ -1118,7 +1166,9 @@ class HelloTriangleApplication {
 
         vkCmdBindIndexBuffer(commandBuffer, indexBuffer, 0, VK_INDEX_TYPE_UINT16);
 
-        vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(indices.size()), 1, 0, 0, 0);
+        for (size_t j = 0; j < faces.size() - 1; j++) {
+            vkCmdDrawIndexed(commandBuffer, faces[j + 1] - faces[j], 1, faces[j], 0, 0);
+        }
 
         vkCmdEndRenderPass(commandBuffer);
 
@@ -1149,10 +1199,12 @@ class HelloTriangleApplication {
         float time = std::chrono::duration_cast<std::chrono::milliseconds>(currentTime - startTime).count() / 1000.0f;
 
         UniformBufferObject ubo = {};
-        ubo.model = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-        ubo.view = glm::lookAt(glm::vec3(0.0f, 1.0f, -2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+        ubo.eye = glm::vec3(2.0f, 2.0f, 2.0f);
+        glm::mat4 model = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+        ubo.view = glm::lookAt(ubo.eye, glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
         ubo.proj = glm::perspective(glm::radians(45.0f), swapChainExtent.width / (float)swapChainExtent.height, 0.1f, 10.0f);
         ubo.proj[1][1] *= -1;
+        ubo.mvp = ubo.proj * ubo.view * model;
 
         void* data;
         vkMapMemory(device, uniformBufferMemory, 0, sizeof(ubo), 0, &data);

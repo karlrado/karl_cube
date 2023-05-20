@@ -13,6 +13,7 @@ macro(build_shader src dst)
 endmacro(build_shader)
 
 build_shader("shader.vert" "vert.spv")
+build_shader("shader.geom" "geom.spv")
 build_shader("shader.frag" "frag.spv")
 
 add_custom_target(generate-shaders DEPENDS ${DEPS})
